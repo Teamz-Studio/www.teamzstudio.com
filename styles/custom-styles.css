@@ -98,7 +98,10 @@ p {
 
 #light-grad {
   background-color: #352EC0; /* For browsers that do not support gradients */
-  background-image: linear-gradient(to bottom right, #352EC0, #171279);
+  -background-image: linear-gradient(to bottom right, #352EC0, #171279);
+  background-image: url(../images/bg-texture.png);
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .pinstripe {
