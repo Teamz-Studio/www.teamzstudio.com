@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TEAMZ – World Cup 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #1a1b3a; --navy-mid: #22244a; --navy-light: #2d3060;
+    --green: #00e676; --gold: #ffc107; --white: #ffffff;
+    --muted: rgba(255,255,255,0.45); --radius: 18px;
+    --live-red: #ff1744;
+  }
+  html, body { height: 100%; overflow: hidden; background: var(--navy); font-family: 'Barlow', sans-serif; }
+
+  /* ── State bar ── */
+  #state-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    background: #0d0e20; border-bottom: 1px solid var(--navy-light);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 7px 14px; height: 40px;
+  }
+  #state-bar span { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+  .ssbtn {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    background: var(--navy-light); color: var(--muted);
+    border: 1.5px solid rgba(255,255,255,0.1); border-radius: 6px;
+    padding: 3px 12px; cursor: pointer; transition: all 0.18s;
+  }
+  .ssbtn:hover { background: var(--navy-mid); color: var(--white); }
+  .ssbtn.active { background: var(--green); color: var(--navy); border-color: var(--green); }
+
+  /* ── Header ── */
+  header {
+    position: fixed; top: 40px; left: 0; right: 0; z-index: 100;
+    background: var(--navy); border-bottom: 2px solid var(--navy-light);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; height: 52px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { background: var(--green); color: var(--navy); font-size: 18px; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; }
+  .logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; color: var(--white); }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .match-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--green); text-transform: uppercase; }
+  .status-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; }
+  .status-pre  { background: var(--navy-light); color: var(--muted); }
+  .status-live { background: var(--live-red); color: white; animation: blink 1.4s infinite; }
+  .status-ft   { background: var(--green); color: var(--navy); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.55} }
+
+  /* ── Swiper ── */
+  .swiper-wrap { position: fixed; top: 92px; bottom: 68px; left: 0; right: 0; overflow: hidden; }
+  .swiper-track { display: flex; height: 100%; transition: transform 0.38s cubic-bezier(.4,0,.2,1); }
+  .slide { min-width: 100%; height: 100%; padding: 14px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
+
+  /* ── Ticket ── */
+  .ticket { width: 100%; max-width: 390px; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.5); flex-shrink: 0; }
+
+  .ticket-header { background: var(--navy); padding: 14px 18px 12px; position: relative; overflow: hidden; }
+  .ticket-header::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 6px; background: repeating-linear-gradient(90deg, var(--green) 0 12px, transparent 12px 18px); }
+  .ticket-matchup { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .ticket-team { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1.5px; color: var(--white); flex: 1; display: flex; align-items: center; gap: 6px; }
+  .ticket-team.away { text-align: right; justify-content: flex-end; }
+  .ticket-flag { font-size: 18px; line-height: 1; }
+  .ticket-vs-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .ticket-vs { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; color: var(--green); letter-spacing: 2px; background: rgba(0,230,118,0.12); border: 1px solid var(--green); padding: 2px 7px; border-radius: 6px; }
+  .score-line { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--white); letter-spacing: 3px; text-align: center; }
+  .score-line.live-score { color: var(--live-red); }
+  .ticket-meta { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+  .ticket-meta span { color: var(--gold); }
+
+  /* ── Score strip ── */
+  .score-strip {
+    padding: 9px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .strip-pre  { background: linear-gradient(90deg, #1a2060, #2d3080); }
+  .strip-live { background: linear-gradient(90deg, #7b0000, #c62828); }
+  .strip-ft   { background: linear-gradient(90deg, #1b5e20, #2e7d32); }
+  .strip-left-label { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.7); }
+  .strip-left-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); margin-top: 1px; }
+  .strip-score { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 1px; color: white; line-height: 1; }
+  .strip-score sup { font-size: 14px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; margin-left: 3px; opacity: 0.8; vertical-align: super; }
+
+  /* ── Owner band ── */
+  .ticket-owner-band { background: var(--green); padding: 7px 18px; display: flex; align-items: center; justify-content: space-between; }
+  .ticket-owner-name { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; color: var(--navy); }
+  .ticket-owner-label { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--navy); opacity: 0.65; text-transform: uppercase; }
+  .stars { display: flex; gap: 2px; }
+  .star { color: var(--gold); font-size: 13px; }
+  .star.empty { color: rgba(0,0,0,0.2); }
+
+  /* ── Ticket body ── */
+  .ticket-body { padding: 14px 18px 18px; }
+  .section-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--navy); opacity: 0.4; text-transform: uppercase; margin-bottom: 7px; margin-top: 14px; }
+  .section-label:first-child { margin-top: 0; }
+
+  .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .team-col { display: flex; flex-direction: column; gap: 5px; }
+  .team-col-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.45; color: var(--navy); margin-bottom: 2px; }
+
+  .player-chip { display: flex; align-items: center; gap: 6px; background: var(--navy); border-radius: 8px; padding: 6px 8px 6px 10px; }
+  .player-chip .pos-tag { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.35); min-width: 28px; }
+  .player-chip .pname { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: var(--white); text-transform: uppercase; flex: 1; }
+  .player-chip .event-tag { font-size: 10px; color: var(--gold); font-family: 'Barlow Condensed', sans-serif; font-weight: 600; white-space: nowrap; }
+  .pts-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 900; padding: 2px 6px; border-radius: 5px; flex-shrink: 0; }
+  .pts-badge.pos  { background: var(--green); color: var(--navy); }
+  .pts-badge.neg  { background: #ff1744; color: white; }
+  .pts-badge.zero { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.4); }
+  .pts-badge.pre  { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.25); font-size: 11px; }
+
+  /* ── Perf divider ── */
+  .perf { display: flex; align-items: center; margin: 14px -18px; }
+  .perf::before { content: ''; flex: 1; height: 1.5px; background: repeating-linear-gradient(90deg, rgba(0,0,0,0.1) 0 6px, transparent 6px 10px); }
+  .perf-circle { width: 20px; height: 20px; border-radius: 50%; background: var(--navy); flex-shrink: 0; }
+  .perf-circle.left { margin-left: -10px; }
+  .perf-circle.right { margin-right: -10px; }
+
+  /* ── Props grid ── */
+  .props-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+  .prop-card { border-radius: 10px; overflow: hidden; border: 1.5px solid rgba(0,0,0,0.07); }
+  .prop-card-top { padding: 5px 8px 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; }
+  .prop-card-top.outcome { background: var(--navy); color: var(--green); }
+  .prop-card-top.goals   { background: #1565c0; color: #90caf9; }
+  .prop-card-top.cs      { background: #4a148c; color: #ce93d8; }
+  .prop-result { font-size: 11px; }
+  .prop-card-value { padding: 6px 8px 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; color: var(--navy); background: #f5f7fa; text-align: center; line-height: 1.2; }
+  .prop-pts { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; text-align: center; padding: 3px 8px 6px; background: #f5f7fa; }
+  .prop-pts.correct { color: #2e7d32; }
+  .prop-pts.wrong   { color: #c62828; }
+  .prop-pts.pending { color: #999; }
+
+  /* ── Footer ── */
+  .ticket-footer { background: var(--navy-mid); padding: 10px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .barcode { display: flex; gap: 2px; align-items: flex-end; height: 28px; }
+  .barcode span { display: inline-block; background: var(--green); border-radius: 1px; width: 3px; }
+  .ticket-id { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+
+  /* ── League table slide ── */
+  .league-card { width: 100%; max-width: 390px; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.5); flex-shrink: 0; }
+  .league-header { background: var(--navy); padding: 14px 18px 12px; }
+  .league-header::after { content: ''; display: block; margin-top: 10px; height: 6px; background: repeating-linear-gradient(90deg, var(--green) 0 12px, transparent 12px 18px); }
+  .league-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--white); }
+  .league-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+  .league-body { padding: 12px 18px 18px; }
+  .league-table { width: 100%; border-collapse: collapse; }
+  .league-table th { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(26,27,58,0.4); padding: 0 6px 8px; text-align: left; }
+  .league-table th.num { text-align: right; }
+  .league-table td { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; padding: 7px 6px; border-top: 1px solid rgba(0,0,0,0.06); vertical-align: middle; }
+  .league-table td.num { text-align: right; }
+  .league-table tr.you { background: rgba(0,230,118,0.07); }
+  .league-table tr.you td { color: #1b5e20; }
+  .rank-pill { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-family: 'Bebas Neue', sans-serif; font-size: 13px; }
+  .rank-1 { background: var(--gold); color: var(--navy); }
+  .rank-2 { background: #bdbdbd; color: var(--navy); }
+  .rank-3 { background: #bf8a50; color: white; }
+  .rank-n { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.45); }
+  .pts-num { color: #1b5e20; font-size: 16px; }
+  tr.you .pts-num { font-size: 18px; }
+
+  /* ── Nav footer ── */
+  footer { position: fixed; bottom: 0; left: 0; right: 0; height: 68px; background: var(--navy); border-top: 2px solid var(--navy-light); display: flex; align-items: center; justify-content: center; padding: 0 20px; }
+  .nav-btn { width: 46px; height: 46px; border: none; background: var(--navy-light); color: var(--white); border-radius: 12px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; flex-shrink: 0; }
+  .nav-btn:hover { background: var(--green); color: var(--navy); }
+  .nav-btn:active { transform: scale(0.93); }
+  .nav-btn:disabled { opacity: 0.25; pointer-events: none; }
+  .dots { display: flex; gap: 8px; flex: 1; justify-content: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--navy-light); border: 2px solid rgba(255,255,255,0.15); transition: all 0.25s; cursor: pointer; }
+  .dot.active { background: var(--green); border-color: var(--green); width: 24px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ── State switcher (dev control) ── -->
+<div id="state-bar">
+  <span>State:</span>
+  <button class="ssbtn active" data-s="pre"  onclick="setState('pre')">Pre-Match</button>
+  <button class="ssbtn"        data-s="live" onclick="setState('live')">In-Play</button>
+  <button class="ssbtn"        data-s="ft"   onclick="setState('ft')">Full Time</button>
+</div>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">TEAMZ</div>
+  </div>
+  <div class="header-right">
+    <div class="match-badge" id="hdr-badge">BRA vs ARG · WC 2026</div>
+    <div class="status-badge status-pre" id="hdr-status">KO Today · 21:00 ET</div>
+  </div>
+</header>
+
+<div class="swiper-wrap" id="swiperWrap">
+  <div class="swiper-track" id="track"></div>
+</div>
+
+<footer>
+  <button class="nav-btn" id="prevBtn" onclick="navigate(-1)">&#8249;</button>
+  <div class="dots" id="dots"></div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">&#8250;</button>
+</footer>
+
+<script>
+// ─── Match data ───────────────────────────────────────────
+let STATE = 'pre'; // 'pre' | 'live' | 'ft'
+
+const RESULT = { outcome: 'Brazil Win', goals: '2–3 Goals', cs: 'No Clean Sheet' };
+const FT_SCORE_STR  = '2 – 1';
+const LIVE_SCORE_STR = '1 – 1';
+const LIVE_MIN = "67'";
+
+// Display names for players
+const PNAME = {
+  'Alisson':      'Alisson',
+  'Marquinhos':   'Marquinhos',
+  'Raphinha':     'Raphinha',
+  'Vinicius':     'Vinicius Jr.',
+  'Rodrygo':      'Rodrygo',
+  'Endrick':      'Endrick',
+  'DibuMartinez': 'Dibu Martínez',
+  'Romero':       'Romero',
+  'MacAllister':  'Mac Allister',
+  'DePaul':       'De Paul',
+  'Lautaro':      'Lautaro',
+  'Alvarez':      'Álvarez',
+  'Messi':        'Messi',
+  'Lisandro':     'L. Martínez',
+};
+
+// Positions
+const PPOS = {
+  'Alisson':'GK','Marquinhos':'DEF','Raphinha':'MID','Vinicius':'FWD',
+  'Rodrygo':'MID','Endrick':'FWD','DibuMartinez':'GK','Romero':'DEF',
+  'MacAllister':'MID','DePaul':'MID','Lautaro':'FWD','Alvarez':'FWD',
+  'Messi':'FWD','Lisandro':'DEF',
+};
+
+// Points at 67' (live)
+const PTS_LIVE = {
+  'Alisson':4,'Marquinhos':4,'Raphinha':8,'Vinicius':14,
+  'Rodrygo':5,'Endrick':0,'DibuMartinez':2,'Romero':4,
+  'MacAllister':5,'DePaul':2,'Lautaro':14,'Alvarez':4,
+  'Messi':7,'Lisandro':4,
+};
+
+// Points at full time
+const PTS_FT = {
+  'Alisson':6,'Marquinhos':16,'Raphinha':10,'Vinicius':18,
+  'Rodrygo':7,'Endrick':4,'DibuMartinez':3,'Romero':5,
+  'MacAllister':8,'DePaul':3,'Lautaro':14,'Alvarez':6,
+  'Messi':9,'Lisandro':5,
+};
+
+// Notable events shown on chips
+const EVENTS_LIVE = {
+  'Raphinha': "🅰 23'",
+  'Vinicius': "⚽ 23'",
+  'Messi':    "🅰 55'",
+  'Lautaro':  "⚽ 55'",
+};
+
+const EVENTS_FT = {
+  'Raphinha':    "🅰 23'",
+  'Vinicius':    "⚽23' 🅰78'",
+  'Messi':       "🅰 55'",
+  'Lautaro':     "⚽ 55'",
+  'Marquinhos':  "⚽ 78'",
+};
+
+// ─── Tickets ──────────────────────────────────────────────
+const TICKETS = [
+  {
+    user:'Stu', id:'TKT-B7M2R4', stars:5,
+    home:['Vinicius','Raphinha','Marquinhos'],
+    away:['Messi','Lautaro','MacAllister'],
+    outcome:'Brazil Win', goals:'2–3 Goals', cs:'No Clean Sheet'
+  },
+  {
+    user:'Roo', id:'TKT-R4X9W7', stars:3,
+    home:['Alisson','Rodrygo','Endrick'],
+    away:['DibuMartinez','Romero','Lautaro'],
+    outcome:'Draw', goals:'2–3 Goals', cs:'No Clean Sheet'
+  },
+  {
+    user:'Dad', id:'TKT-D2N5Q3', stars:4,
+    home:['Marquinhos','Vinicius','Raphinha'],
+    away:['Messi','DePaul','Lisandro'],
+    outcome:'Brazil Win', goals:'4+ Goals', cs:'No Clean Sheet'
+  },
+  {
+    user:'Mum', id:'TKT-M7F1B6', stars:2,
+    home:['Rodrygo','Endrick','Alisson'],
+    away:['Alvarez','MacAllister','Romero'],
+    outcome:'Draw', goals:'2–3 Goals', cs:'Brazil CS'
+  }
+];
+
+// ─── League table (FT) ────────────────────────────────────
+// Computed real totals + some fictional extra players
+function computeTotal(t) {
+  const pts = STATE === 'live' ? PTS_LIVE : PTS_FT;
+  const pPts = [...t.home, ...t.away].reduce((s, n) => s + (pts[n] ?? 0), 0);
+  const propPts = ['outcome','goals','cs'].reduce((s, k) => s + (t[k] === RESULT[k] ? 20 : 0), 0);
+  return { pPts, propPts, total: pPts + propPts };
+}
+
+const LEAGUE = [
+  { user:'TheGaffer88', pPts: 72, propPts: 40, you: false },
+  { user:'SambaKing',   pPts: 68, propPts: 40, you: false },
+  // Stu, Roo, Dad, Mum injected at render time
+  { user:'AlbicelesteFan', pPts: 55, propPts: 20, you: false },
+  { user:'TigerFoot',     pPts: 50, propPts: 20, you: false },
+  { user:'SelecaoStar',   pPts: 44, propPts: 20, you: false },
+  { user:'GoalMachineXL', pPts: 40, propPts: 20, you: false },
+];
+
+// ─── Rendering helpers ────────────────────────────────────
+function ptsBadge(name) {
+  const pts = STATE === 'ft' ? PTS_FT : (STATE === 'live' ? PTS_LIVE : null);
+  if (!pts) return `<span class="pts-badge pre">${PPOS[name]}</span>`;
+  const p = pts[name] ?? 0;
+  const cls = p > 0 ? 'pos' : p < 0 ? 'neg' : 'zero';
+  return `<span class="pts-badge ${cls}">${p > 0 ? '+' : ''}${p}</span>`;
+}
+
+function eventTag(name) {
+  const map = STATE === 'ft' ? EVENTS_FT : (STATE === 'live' ? EVENTS_LIVE : null);
+  if (!map || !map[name]) return '';
+  return `<span class="event-tag">${map[name]}</span>`;
+}
+
+function playerChip(name) {
+  return `
+    <div class="player-chip">
+      <span class="pos-tag">${PPOS[name]}</span>
+      <span class="pname">${PNAME[name]}</span>
+      ${eventTag(name)}
+      ${ptsBadge(name)}
+    </div>`;
+}
+
+function propCard(typeClass, label, userPick, key) {
+  if (STATE === 'pre') {
+    return `
+    <div class="prop-card">
+      <div class="prop-card-top ${typeClass}"><span>${label}</span></div>
+      <div class="prop-card-value">${userPick}</div>
+      <div class="prop-pts pending">Pending</div>
+    </div>`;
+  }
+  const correct = userPick === RESULT[key];
+  const icon = correct ? '✓' : (STATE === 'ft' ? '✗' : '…');
+  const ptsLabel = STATE === 'ft' ? (correct ? '+20 pts' : '0 pts') : (correct ? '+20 pts' : 'TBD');
+  const ptsClass = correct ? 'correct' : (STATE === 'ft' ? 'wrong' : 'pending');
+  return `
+    <div class="prop-card">
+      <div class="prop-card-top ${typeClass}">
+        <span>${label}</span>
+        <span class="prop-result">${icon}</span>
+      </div>
+      <div class="prop-card-value">${userPick}</div>
+      <div class="prop-pts ${ptsClass}">${ptsLabel}</div>
+    </div>`;
+}
+
+function scoreStrip(t) {
+  const pts = STATE === 'ft' ? PTS_FT : (STATE === 'live' ? PTS_LIVE : null);
+  if (STATE === 'pre') {
+    return `
+    <div class="score-strip strip-pre">
+      <div>
+        <div class="strip-left-label">Your Picks</div>
+        <div class="strip-left-sub">Points awarded at kick-off</div>
+      </div>
+      <div class="strip-score" style="font-size:18px;letter-spacing:2px;">KO 21:00<sup>ET</sup></div>
+    </div>`;
+  }
+  const pPts = [...t.home, ...t.away].reduce((s, n) => s + (pts[n] ?? 0), 0);
+  const propPts = ['outcome','goals','cs'].reduce((s, k) => s + (t[k] === RESULT[k] ? 20 : 0), 0);
+  const total = pPts + propPts;
+  const sign = total >= 0 ? '+' : '';
+  const stripClass = STATE === 'live' ? 'strip-live' : 'strip-ft';
+  const topLabel = STATE === 'live' ? `Live · ${LIVE_MIN}` : 'Final Score';
+  return `
+    <div class="score-strip ${stripClass}">
+      <div>
+        <div class="strip-left-label">${topLabel}</div>
+        <div class="strip-left-sub">Players +${pPts} · Props +${propPts}</div>
+      </div>
+      <div class="strip-score">${sign}${total}<sup>pts</sup></div>
+    </div>`;
+}
+
+function ticketHeader() {
+  let vsLabel, scorePart;
+  if (STATE === 'pre') {
+    vsLabel = `<div class="ticket-vs">KO</div>`;
+    scorePart = `<div class="score-line" style="font-size:14px;letter-spacing:1px;color:rgba(255,255,255,0.45)">21:00 ET</div>`;
+  } else if (STATE === 'live') {
+    vsLabel = `<div class="ticket-vs" style="background:rgba(255,23,68,0.15);border-color:#ff1744;color:#ff1744;">LIVE</div>`;
+    scorePart = `<div class="score-line live-score">${LIVE_SCORE_STR}</div>`;
+  } else {
+    vsLabel = `<div class="ticket-vs">FT</div>`;
+    scorePart = `<div class="score-line">${FT_SCORE_STR}</div>`;
+  }
+  const metaLabel = STATE === 'pre' ? 'Kick-off Today' : (STATE === 'live' ? `In Progress &nbsp;·&nbsp; ${LIVE_MIN}` : '<span>Full Time</span>');
+  return `
+    <div class="ticket-header">
+      <div class="ticket-matchup">
+        <div class="ticket-team"><span class="ticket-flag">🇧🇷</span> Brazil</div>
+        <div class="ticket-vs-wrap">
+          ${vsLabel}
+          ${scorePart}
+        </div>
+        <div class="ticket-team away">Argentina <span class="ticket-flag">🇦🇷</span></div>
+      </div>
+      <div class="ticket-meta">${metaLabel} &nbsp;·&nbsp; WC 2026 Group C &nbsp;·&nbsp; MetLife Stadium</div>
+    </div>`;
+}
+
+function starHTML(n) {
+  return [1,2,3,4,5].map(i => `<span class="star${i>n?' empty':''}" >★</span>`).join('');
+}
+
+function barcode() {
+  return [16,22,14,26,18,12,24,20,14,28,18,22,16,10,24,20,12,26,14,20,18,24,12,22,16]
+    .map(h => `<span style="height:${h}px"></span>`).join('');
+}
+
+function renderTicket(t) {
+  const homeLbl = 'BRA';
+  const awayLbl = 'ARG';
+  return `
+  <div class="ticket">
+    ${ticketHeader()}
+    ${scoreStrip(t)}
+    <div class="ticket-owner-band">
+      <div>
+        <div class="ticket-owner-label">Ticket holder</div>
+        <div class="ticket-owner-name">${t.user}</div>
+      </div>
+      <div class="stars">${starHTML(t.stars)}</div>
+    </div>
+    <div class="ticket-body">
+      <div class="section-label">Your Players</div>
+      <div class="teams-grid">
+        <div class="team-col">
+          <div class="team-col-label">${homeLbl}</div>
+          ${t.home.map(p => playerChip(p)).join('')}
+        </div>
+        <div class="team-col">
+          <div class="team-col-label">${awayLbl}</div>
+          ${t.away.map(p => playerChip(p)).join('')}
+        </div>
+      </div>
+      <div class="perf">
+        <div class="perf-circle left"></div>
+        <div class="perf-circle right"></div>
+      </div>
+      <div class="section-label">Your Propositions</div>
+      <div class="props-grid">
+        ${propCard('outcome', 'Result',     t.outcome, 'outcome')}
+        ${propCard('goals',   'Goals',      t.goals,   'goals')}
+        ${propCard('cs',      'Clean Sheet',t.cs,      'cs')}
+      </div>
+    </div>
+    <div class="ticket-footer">
+      <div class="barcode">${barcode()}</div>
+      <div class="ticket-id">${t.id}</div>
+    </div>
+  </div>`;
+}
+
+function renderLeagueTable() {
+  // Build combined table
+  const ticketRows = TICKETS.map(t => {
+    const { pPts, propPts, total } = computeTotal(t);
+    return { user: t.user, pPts, propPts, total, you: t.user === 'Stu' };
+  });
+  const all = [...LEAGUE.map(r => ({ ...r, total: r.pPts + r.propPts })), ...ticketRows];
+  all.sort((a, b) => b.total - a.total);
+
+  const rows = all.map((r, i) => {
+    const rank = i + 1;
+    const rankCls = rank <= 3 ? `rank-${rank}` : 'rank-n';
+    const youCls = r.you ? ' you' : '';
+    const youTag = r.you ? ' 👤' : '';
+    return `
+      <tr class="${youCls}">
+        <td><span class="rank-pill ${rankCls}">${rank}</span></td>
+        <td>${r.user}${youTag}</td>
+        <td class="num">${r.pPts}</td>
+        <td class="num">${r.propPts}</td>
+        <td class="num pts-num">${r.total}</td>
+      </tr>`;
+  }).join('');
+
+  return `
+  <div class="league-card">
+    <div class="league-header">
+      <div class="league-title">League Table</div>
+      <div class="league-sub">Brazil vs Argentina · WC 2026 · Points this match</div>
+    </div>
+    <div class="league-body">
+      <table class="league-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Manager</th>
+            <th class="num">Players</th>
+            <th class="num">Props</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ─── Swiper ───────────────────────────────────────────────
+let cur = 0;
+let slideCount = 0;
+
+function buildSlides() {
+  const track = document.getElementById('track');
+  track.innerHTML = '';
+
+  const slides = [...TICKETS];
+  if (STATE === 'ft') slides.push({ __league: true });
+
+  slideCount = slides.length;
+
+  slides.forEach(t => {
+    const s = document.createElement('div');
+    s.className = 'slide';
+    s.innerHTML = t.__league ? renderLeagueTable() : renderTicket(t);
+    track.appendChild(s);
+  });
+
+  // rebuild dots
+  const dotsEl = document.getElementById('dots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < slideCount; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === cur ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+
+  goTo(Math.min(cur, slideCount - 1));
+}
+
+function goTo(i) {
+  cur = i;
+  document.getElementById('track').style.transform = `translateX(-${i * 100}%)`;
+  document.querySelectorAll('.dot').forEach((d, j) => d.classList.toggle('active', j === i));
+  document.getElementById('prevBtn').disabled = i === 0;
+  document.getElementById('nextBtn').disabled = i === slideCount - 1;
+}
+
+function navigate(dir) { goTo(Math.max(0, Math.min(slideCount - 1, cur + dir))); }
+
+// ─── State switching ──────────────────────────────────────
+const HEADER_CONFIG = {
+  pre:  { badge: 'BRA vs ARG · WC 2026', statusText: 'KO Today · 21:00 ET',   statusClass: 'status-pre' },
+  live: { badge: `BRA 1–1 ARG · ${LIVE_MIN}`,      statusText: '● Live',              statusClass: 'status-live' },
+  ft:   { badge: 'BRA 2–1 ARG · Full Time',         statusText: '✓ Full Time',         statusClass: 'status-ft' },
+};
+
+function setState(s) {
+  STATE = s;
+
+  // update header
+  const cfg = HEADER_CONFIG[s];
+  document.getElementById('hdr-badge').textContent = cfg.badge;
+  const st = document.getElementById('hdr-status');
+  st.textContent = cfg.statusText;
+  st.className = `status-badge ${cfg.statusClass}`;
+
+  // update buttons
+  document.querySelectorAll('.ssbtn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.s === s);
+  });
+
+  // rebuild slides
+  buildSlides();
+}
+
+// ─── Swipe support ────────────────────────────────────────
+let sx = null;
+const wrap = document.getElementById('swiperWrap');
+wrap.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+wrap.addEventListener('touchend', e => {
+  if (sx === null) return;
+  const dx = e.changedTouches[0].clientX - sx;
+  if (Math.abs(dx) > 45) navigate(dx < 0 ? 1 : -1);
+  sx = null;
+});
+
+// ─── Init ─────────────────────────────────────────────────
+setState('pre');
+</script>
+</body>
+</html>
