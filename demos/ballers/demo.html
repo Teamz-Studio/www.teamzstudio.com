@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BALLERS - Ultimate Fantasy Sports</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            400: '#4ade80',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            900: '#14532d',
+                            gold: '#fbbf24',
+                            cyan: '#06b6d4',
+                            purple: '#a855f7',
+                            pink: '#ec4899',
+                            dark: '#0b0f19',
+                            card: '#161e2e'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tone.js for dynamic sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #070a12;
+            color: #f3f4f6;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Glassmorphism effects */
+        .glass-panel {
+            background: rgba(22, 30, 46, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .glow-green {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+        }
+
+        .glow-gold {
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+        }
+
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Animated pulse ring */
+        @keyframes ringPulse {
+            0% { transform: scale(0.98); opacity: 0.8; }
+            50% { transform: scale(1.02); opacity: 1; }
+            100% { transform: scale(0.98); opacity: 0.8; }
+        }
+        .pulse-active {
+            animation: ringPulse 2s infinite ease-in-out;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        /* Floating point badge animation */
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(10px) scale(0.8); }
+            30% { opacity: 1; transform: translateY(-5px) scale(1.1); }
+            100% { opacity: 0; transform: translateY(-25px) scale(1); }
+        }
+        .float-points {
+            animation: floatUp 1.2s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex justify-center items-center p-0 md:p-4 bg-slate-950">
+
+    <!-- Mobile App Container -->
+    <div id="app" class="w-full max-w-md h-[100vh] md:h-[880px] md:rounded-3xl bg-[#090d16] text-slate-100 flex flex-col relative overflow-hidden shadow-2xl border border-slate-800/80">
+
+        <!-- Top Header Navigation -->
+        <header class="p-3.5 px-4 glass-panel z-20 flex justify-between items-center border-b border-slate-800/80 shrink-0">
+            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="app.resetToLanding()">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 via-emerald-400 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-brand-500/30">
+                    B
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-xl tracking-tight leading-none bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                        BALLERS
+                    </h1>
+                    <span id="headerSportTag" class="text-[10px] font-bold text-brand-400 uppercase tracking-wider block">FANTASY ARENA</span>
+                </div>
+            </div>
+
+            <!-- Token Purse Badge -->
+            <div id="purseDisplay" class="flex items-center space-x-2 bg-gradient-to-r from-amber-500/20 to-yellow-500/10 border border-amber-500/40 px-3 py-1.5 rounded-full shadow-inner">
+                <i class="fa-solid fa-coins text-amber-400 text-sm animate-bounce"></i>
+                <div class="text-right">
+                    <span class="text-[9px] block text-amber-200 font-medium uppercase leading-none">Purse</span>
+                    <span id="purseValue" class="text-base font-extrabold text-amber-300 leading-none">20</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Main Scrollable View Area -->
+        <main id="mainContainer" class="flex-1 overflow-y-auto relative p-4 space-y-4 pb-28">
+
+            <!-- LANDING SCREEN -->
+            <section id="viewLanding" class="flex flex-col h-full justify-between py-4 space-y-6">
+                <!-- Hero Branding Header -->
+                <div class="text-center pt-4 space-y-3">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-bold tracking-wide uppercase">
+                        <i class="fa-solid fa-fire text-amber-400"></i> Season 2026 Live
+                    </div>
+                    <h2 class="text-4xl font-black tracking-tight text-white leading-tight">
+                        PICK YOUR <br/>
+                        <span class="bg-gradient-to-r from-brand-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                            BALLERS LEGENDS
+                        </span>
+                    </h2>
+                    <p class="text-xs text-slate-400 px-6 max-w-xs mx-auto">
+                        Draft top athletes, spend 20 tokens wisely across 4 categories, and climb the live leaderboards!
+                    </p>
+                </div>
+
+                <!-- Sport Selector Cards -->
+                <div class="space-y-3.5 my-auto">
+                    <p class="text-xs font-bold uppercase tracking-widest text-slate-400 text-center mb-1">Select A Sport Arena</p>
+                    
+                    <!-- Tennis Card -->
+                    <button onclick="app.selectSport('tennis')" class="group w-full relative overflow-hidden rounded-2xl p-4 glass-panel border border-emerald-500/30 hover:border-emerald-400 transition-all duration-300 text-left flex items-center justify-between shadow-lg hover:shadow-emerald-500/10">
+                        <div class="absolute inset-0 bg-gradient-to-r from-emerald-950/40 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition"></div>
+                        <div class="relative z-10 flex items-center space-x-4">
+                            <div class="w-14 h-14 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-2xl group-hover:scale-110 transition duration-300">
+                                <i class="fa-solid fa-baseball"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-lg text-white group-hover:text-emerald-300 transition">TENNIS</h3>
+                                <p class="text-xs text-slate-400">Wimbledon 2026</p>
+                                <span class="inline-block mt-1 text-[10px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">4 Categories • 8 Picks</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition"></i>
+                    </button>
+
+                    <!-- Golf Card -->
+                    <button onclick="app.selectSport('golf')" class="group w-full relative overflow-hidden rounded-2xl p-4 glass-panel border border-amber-500/30 hover:border-amber-400 transition-all duration-300 text-left flex items-center justify-between shadow-lg hover:shadow-amber-500/10">
+                        <div class="absolute inset-0 bg-gradient-to-r from-amber-950/40 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition"></div>
+                        <div class="relative z-10 flex items-center space-x-4">
+                            <div class="w-14 h-14 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-2xl group-hover:scale-110 transition duration-300">
+                                <i class="fa-solid fa-golf-ball-tee"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-lg text-white group-hover:text-amber-300 transition">GOLF</h3>
+                                <p class="text-xs text-slate-400">The Masters 2026</p>
+                                <span class="inline-block mt-1 text-[10px] font-bold text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-800">4 Categories • 8 Picks</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition"></i>
+                    </button>
+
+                    <!-- Formula 1 Card -->
+                    <button onclick="app.selectSport('f1')" class="group w-full relative overflow-hidden rounded-2xl p-4 glass-panel border border-cyan-500/30 hover:border-cyan-400 transition-all duration-300 text-left flex items-center justify-between shadow-lg hover:shadow-cyan-500/10">
+                        <div class="absolute inset-0 bg-gradient-to-r from-cyan-950/40 via-transparent to-transparent opacity-80 group-hover:opacity-100 transition"></div>
+                        <div class="relative z-10 flex items-center space-x-4">
+                            <div class="w-14 h-14 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-2xl group-hover:scale-110 transition duration-300">
+                                <i class="fa-solid fa-flag-checkered"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-lg text-white group-hover:text-cyan-300 transition">FORMULA 1</h3>
+                                <p class="text-xs text-slate-400">Bahrain Grand Prix</p>
+                                <span class="inline-block mt-1 text-[10px] font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">4 Categories • 8 Picks</span>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition"></i>
+                    </button>
+                </div>
+
+                <!-- Footer details -->
+                <div class="text-center text-[11px] text-slate-500 space-y-1">
+                    <p><i class="fa-solid fa-shield-halved text-brand-400"></i> Official Ballers League • Fast-Paced Action</p>
+                </div>
+            </section>
+
+            <!-- DRAFT / SELECTION SCREEN -->
+            <section id="viewSelection" class="hidden space-y-4">
+
+                <!-- Tournament Banner & Countdown Header -->
+                <div id="tournamentBanner" class="glass-panel p-4 rounded-2xl border border-slate-700/60 relative overflow-hidden shadow-xl">
+                    <div id="bannerBg" class="absolute inset-0 opacity-20 bg-cover bg-center"></div>
+                    <div class="relative z-10 flex flex-col items-center text-center space-y-2">
+                        <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700 text-xs font-semibold text-slate-300">
+                            <i class="fa-solid fa-trophy text-amber-400"></i>
+                            <span id="tournamentName" class="font-bold text-white">Wimbledon 2026</span>
+                        </div>
+                        
+                        <!-- Live Countdown Clock -->
+                        <div class="flex items-center space-x-3 pt-1">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Starts In:</span>
+                            <div id="countdownTimer" class="flex space-x-2 text-center font-mono font-bold text-xs text-brand-400">
+                                <div class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800"><span id="cdHours">04</span>h</div>
+                                <div class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800"><span id="cdMins">28</span>m</div>
+                                <div class="bg-slate-900/90 px-2 py-1 rounded border border-slate-800"><span id="cdSecs">45</span>s</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instruction & Budget Alert Banner -->
+                <div class="bg-gradient-to-r from-brand-900/40 via-slate-900 to-slate-900 border border-brand-500/30 p-3 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-sm">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white">Spend <span class="text-amber-400">20 tokens</span> on <span class="text-brand-400">8 picks</span></p>
+                            <p class="text-[10px] text-slate-400">Tap empty slots below to select your ballers</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span id="pickProgressText" class="text-xs font-extrabold text-brand-400">0/8</span>
+                    </div>
+                </div>
+
+                <!-- 4 Category Containers Grid -->
+                <div id="categoryContainersGrid" class="space-y-3.5">
+                    <!-- Dynamically injected category boxes -->
+                </div>
+            </section>
+
+            <!-- IN-PLAY / LIVE SIMULATION SCREEN -->
+            <section id="viewInPlay" class="hidden space-y-4">
+                <!-- Top Status Bar -->
+                <div class="glass-panel p-3 rounded-2xl flex justify-between items-center border border-emerald-500/30">
+                    <div class="flex items-center space-x-2">
+                        <span class="relative flex h-3 w-3">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        </span>
+                        <span class="text-xs font-black tracking-wider uppercase text-emerald-400">LIVE MATCH DAY</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-slate-400 block uppercase font-bold">Total Score</span>
+                        <span id="liveTotalPoints" class="text-xl font-extrabold text-amber-400">0 PTS</span>
+                    </div>
+                </div>
+
+                <!-- Event Log Ticker Deck -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex items-center space-x-3 overflow-hidden shadow-inner">
+                    <i class="fa-solid fa-bolt text-amber-400 animate-pulse text-lg"></i>
+                    <div class="overflow-hidden flex-1 text-xs text-slate-300 font-medium">
+                        <p id="liveFeedText" class="truncate">Match play beginning soon... Get ready!</p>
+                    </div>
+                    <span id="simTimeRemaining" class="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Q1 0:00</span>
+                </div>
+
+                <!-- Simulation Speed & Controls Deck -->
+                <div class="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 text-xs">
+                    <span class="text-slate-400 font-semibold text-[11px]"><i class="fa-solid fa-sliders text-brand-400"></i> Speed:</span>
+                    <div class="flex space-x-1.5">
+                        <button onclick="app.setSimSpeed(1)" id="btnSpeed1" class="px-2.5 py-1 rounded-lg font-bold bg-brand-500 text-slate-950 text-[11px]">1x</button>
+                        <button onclick="app.setSimSpeed(2)" id="btnSpeed2" class="px-2.5 py-1 rounded-lg font-bold bg-slate-800 text-slate-300 hover:text-white text-[11px]">2x</button>
+                        <button onclick="app.setSimSpeed(5)" id="btnSpeed5" class="px-2.5 py-1 rounded-lg font-bold bg-slate-800 text-slate-300 hover:text-white text-[11px]">5x</button>
+                    </div>
+                </div>
+
+                <!-- User Selected Picks Cards with Live Points Breakdown -->
+                <div id="inPlayPicksList" class="space-y-3">
+                    <!-- Dynamic live cards -->
+                </div>
+            </section>
+
+            <!-- LEADERBOARD SCREEN -->
+            <section id="viewLeaderboard" class="hidden space-y-4">
+                <div class="text-center space-y-1">
+                    <h2 class="text-2xl font-black text-white flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-400"></i> TOURNAMENT LEADERBOARD
+                    </h2>
+                    <p class="text-xs text-slate-400">Compete against global ballers for top ranking</p>
+                </div>
+
+                <!-- User Rank Highlight Card -->
+                <div class="glass-panel p-4 rounded-2xl border-2 border-brand-500/50 flex items-center justify-between glow-green">
+                    <div class="flex items-center space-x-3.5">
+                        <div id="userRankBadge" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-500 to-cyan-400 flex items-center justify-center font-black text-slate-950 text-lg">
+                            #--
+                        </div>
+                        <div>
+                            <span class="text-xs font-extrabold text-brand-400 uppercase tracking-wider block">YOUR SQUAD</span>
+                            <h4 class="font-extrabold text-white text-base">You (Baller Elite)</h4>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span id="userLeaderboardPoints" class="text-2xl font-black text-amber-400">0</span>
+                        <span class="text-[10px] text-slate-400 block font-bold">PTS</span>
+                    </div>
+                </div>
+
+                <!-- Global Ranks List Table -->
+                <div id="leaderboardList" class="space-y-2">
+                    <!-- Dynamic leaderboard rows -->
+                </div>
+            </section>
+        </main>
+
+        <!-- POPUP SELECTION MODAL -->
+        <div id="selectionModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex justify-center items-end md:items-center p-0 md:p-4">
+            <div class="w-full max-w-md bg-[#0e1422] border-t md:border border-slate-800 rounded-t-3xl md:rounded-3xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300">
+                <!-- Modal Header -->
+                <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                    <div>
+                        <span id="modalCategoryLabel" class="text-[10px] font-bold text-brand-400 uppercase tracking-wider block">CATEGORY PICK</span>
+                        <h3 id="modalCategoryTitle" class="font-extrabold text-white text-base">Pick a Player</h3>
+                    </div>
+                    <button onclick="app.closeModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Filter / Search Header -->
+                <div class="p-3 bg-slate-900/30 border-b border-slate-800/60 flex space-x-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
+                        <input type="text" id="modalSearchInput" oninput="app.filterModalCandidates()" placeholder="Search baller..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+
+                <!-- Candidates List -->
+                <div id="modalCandidatesList" class="p-4 overflow-y-auto flex-1 space-y-2.5">
+                    <!-- Dynamically rendered candidate items -->
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM BAR / DOCK -->
+        
+        <!-- 1. Selection Bottom Dock (Shows 8 thumbnails + DONE button) -->
+        <div id="dockSelection" class="absolute bottom-0 left-0 right-0 glass-panel border-t border-slate-800 p-3 z-30 flex items-center justify-between space-x-2">
+            <!-- 8 Selected Mini Thumbnails -->
+            <div class="flex-1 overflow-x-auto py-1">
+                <div id="miniPicksBar" class="flex space-x-1.5">
+                    <!-- 8 Mini Pick Slots -->
+                </div>
+            </div>
+
+            <!-- DONE Button -->
+            <button id="btnDonePicks" onclick="app.submitPicks()" disabled class="px-5 py-3 rounded-xl font-black text-xs uppercase tracking-wider bg-slate-800 text-slate-500 cursor-not-allowed transition duration-200 flex items-center space-x-2 shrink-0">
+                <span>DONE</span>
+                <i class="fa-solid fa-check"></i>
+            </button>
+        </div>
+
+        <!-- 2. Navigation Bottom Bar for In-Play / Leaderboard screens -->
+        <div id="dockNav" class="absolute bottom-0 left-0 right-0 glass-panel border-t border-slate-800 p-2 z-30 hidden flex justify-around items-center">
+            <button onclick="app.switchTab('inplay')" id="tabInPlay" class="flex-1 py-2 text-center flex flex-col items-center space-y-1 text-brand-400 font-bold">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="text-[10px] uppercase tracking-wider">In-Play Score</span>
+            </button>
+            <button onclick="app.switchTab('leaderboard')" id="tabLeaderboard" class="flex-1 py-2 text-center flex flex-col items-center space-y-1 text-slate-500 font-bold hover:text-slate-300">
+                <i class="fa-solid fa-ranking-star text-lg"></i>
+                <span class="text-[10px] uppercase tracking-wider">Leaderboard</span>
+            </button>
+            <button onclick="app.resetToLanding()" class="flex-1 py-2 text-center flex flex-col items-center space-y-1 text-slate-500 font-bold hover:text-slate-300">
+                <i class="fa-solid fa-rotate-left text-lg"></i>
+                <span class="text-[10px] uppercase tracking-wider">New Game</span>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Tone.js Sound Synthesizer Helper
+        const sound = {
+            synthsInit: false,
+            synth: null,
+            init() {
+                if(this.synthsInit) return;
+                try {
+                    this.synth = new Tone.Synth().toDestination();
+                    this.synthsInit = true;
+                } catch(e) {}
+            },
+            pick() {
+                this.init();
+                if(this.synth) this.synth.triggerAttackRelease("C5", "8n");
+            },
+            coin() {
+                this.init();
+                if(this.synth) this.synth.triggerAttackRelease("G5", "16n");
+            },
+            error() {
+                this.init();
+                if(this.synth) this.synth.triggerAttackRelease("A2", "8n");
+            },
+            done() {
+                this.init();
+                if(this.synth) {
+                    const now = Tone.now();
+                    this.synth.triggerAttackRelease("C4", "8n", now);
+                    this.synth.triggerAttackRelease("E4", "8n", now + 0.1);
+                    this.synth.triggerAttackRelease("G4", "8n", now + 0.2);
+                    this.synth.triggerAttackRelease("C5", "4n", now + 0.3);
+                }
+            }
+        };
+
+        // Sport Configurations Data Model
+        const SPORTS_DATA = {
+            tennis: {
+                title: "TENNIS",
+                tournament: "Wimbledon 2026",
+                bannerBg: "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?auto=format&fit=crop&w=800&q=80",
+                categories: [
+                    { id: "c1", name: "Pick 2 players to win match", slotCount: 2, icon: "fa-trophy", criteria: "Match Wins (+25 pts)" },
+                    { id: "c2", name: "Pick 2 players to score aces", slotCount: 2, icon: "fa-bolt", criteria: "+10 pts per Ace" },
+                    { id: "c3", name: "Pick 2 players to break serve", slotCount: 2, icon: "fa-shield-halved", criteria: "+15 pts per Break" },
+                    { id: "c4", name: "Pick 2 players to win games to love", slotCount: 2, icon: "fa-circle-check", criteria: "+20 pts per Love Game" }
+                ],
+                candidates: [
+                    { id: "t1", name: "Carlos Alcaraz", country: "ESP", cost: 4, rank: "World No. 1", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t2", name: "Jannik Sinner", country: "ITA", cost: 4, rank: "World No. 2", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t3", name: "Novak Djokovic", country: "SRB", cost: 3, rank: "World No. 3", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t4", name: "Daniil Medvedev", country: "NEU", cost: 3, rank: "World No. 4", img: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t5", name: "Alexander Zverev", country: "GER", cost: 3, rank: "World No. 5", img: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t6", name: "Andrey Rublev", country: "NEU", cost: 2, rank: "World No. 6", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t7", name: "Hubert Hurkacz", country: "POL", cost: 2, rank: "Ace Specialist", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t8", name: "Taylor Fritz", country: "USA", cost: 2, rank: "World No. 10", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t9", name: "Stefanos Tsitsipas", country: "GRE", cost: 2, rank: "World No. 11", img: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t10", name: "Ben Shelton", country: "USA", cost: 2, rank: "Big Server", img: "https://images.unsplash.com/photo-1521119989659-a83eee488004?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t11", name: "Nick Kyrgios", country: "AUS", cost: 1, rank: "Wildcard", img: "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=150&q=80" },
+                    { id: "t12", name: "Matteo Berrettini", country: "ITA", cost: 1, rank: "Grass Court Expert", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80" }
+                ]
+            },
+            golf: {
+                title: "GOLF",
+                tournament: "The Masters 2026",
+                bannerBg: "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?auto=format&fit=crop&w=800&q=80",
+                categories: [
+                    { id: "c1", name: "Pick 2 players to finish in top 5", slotCount: 2, icon: "fa-award", criteria: "Top 5 Finish (+30 pts)" },
+                    { id: "c2", name: "Pick 2 players to score eagle", slotCount: 2, icon: "fa-feather", criteria: "+25 pts per Eagle" },
+                    { id: "c3", name: "Pick 2 players to score birdie", slotCount: 2, icon: "fa-flag", criteria: "+10 pts per Birdie" },
+                    { id: "c4", name: "Pick 2 players to 1-putt", slotCount: 2, icon: "fa-bullseye", criteria: "+8 pts per 1-Putt" }
+                ],
+                candidates: [
+                    { id: "g1", name: "Scottie Scheffler", country: "USA", cost: 4, rank: "World No. 1", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g2", name: "Rory McIlroy", country: "NIR", cost: 4, rank: "World No. 2", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g3", name: "Jon Rahm", country: "ESP", cost: 3, rank: "Defending Champ", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g4", name: "Viktor Hovland", country: "NOR", cost: 3, rank: "World No. 4", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g5", name: "Brooks Koepka", country: "USA", cost: 3, rank: "Major Specialist", img: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g6", name: "Xander Schauffele", country: "USA", cost: 2, rank: "Consistent Finisher", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g7", name: "Patrick Cantlay", country: "USA", cost: 2, rank: "Master Putter", img: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g8", name: "Wyndham Clark", country: "USA", cost: 2, rank: "Long Bomber", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g9", name: "Colin Morikawa", country: "USA", cost: 2, rank: "Iron Striker", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g10", name: "Ludvig Åberg", country: "SWE", cost: 2, rank: "Rising Phenom", img: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g11", name: "Tiger Woods", country: "USA", cost: 1, rank: "Legend", img: "https://images.unsplash.com/photo-1521119989659-a83eee488004?auto=format&fit=crop&w=150&q=80" },
+                    { id: "g12", name: "Min Woo Lee", country: "AUS", cost: 1, rank: "Let Him Cook", img: "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=150&q=80" }
+                ]
+            },
+            f1: {
+                title: "FORMULA 1",
+                tournament: "Bahrain Grand Prix",
+                bannerBg: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80",
+                categories: [
+                    { id: "c1", name: "Pick 2 drivers to finish on podium", slotCount: 2, icon: "fa-trophy", criteria: "Podium Finish (+30 pts)" },
+                    { id: "c2", name: "Pick 2 teams to finish on podium", slotCount: 2, icon: "fa-users-gear", criteria: "Team Podium (+25 pts)" },
+                    { id: "c3", name: "Pick 2 drivers to finish race", slotCount: 2, icon: "fa-flag-checkered", criteria: "Race Finish (+15 pts)" },
+                    { id: "c4", name: "Pick 2 drivers to finish 3 places higher", slotCount: 2, icon: "fa-arrow-trend-up", criteria: "+3 Gain (+20 pts)" }
+                ],
+                candidates: [
+                    { id: "f1", name: "Max Verstappen", country: "Red Bull", cost: 4, rank: "3x Champion", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f2", name: "Lewis Hamilton", country: "Ferrari", cost: 4, rank: "7x Champion", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f3", name: "Charles Leclerc", country: "Ferrari", cost: 3, rank: "Pole Master", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f4", name: "Lando Norris", country: "McLaren", cost: 3, rank: "Race Winner", img: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f5", name: "Red Bull Racing", country: "Constructors", cost: 4, rank: "Team", img: "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f6", name: "Ferrari", country: "Constructors", cost: 3, rank: "Team", img: "https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f7", name: "McLaren F1 Team", country: "Constructors", cost: 3, rank: "Team", img: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f8", name: "Mercedes AMG", country: "Constructors", cost: 3, rank: "Team", img: "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f9", name: "Oscar Piastri", country: "McLaren", cost: 2, rank: "Rising Star", img: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f10", name: "George Russell", country: "Mercedes", cost: 2, rank: "Speedster", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f11", name: "Fernando Alonso", country: "Aston Martin", cost: 2, rank: "Veteran Legend", img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80" },
+                    { id: "f12", name: "Yuki Tsunoda", country: "RB", cost: 1, rank: "Underdog", img: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80" }
+                ]
+            }
+        };
+
+        // Main Application Controller
+        const app = {
+            currentSport: null,
+            purse: 20,
+            picks: Array(8).fill(null), // 8 selection slots: [c0_s0, c0_s1, c1_s0, c1_s1, c2_s0, c2_s1, c3_s0, c3_s1]
+            activeModalSlotIndex: null,
+            activeModalCategoryIndex: null,
+            simSpeed: 1,
+            simInterval: null,
+            simTickCount: 0,
+            livePicksData: [],
+            leaderboardData: [
+                { rank: 1, name: "ApexPunter_UK", points: 185, isUser: false },
+                { rank: 2, name: "AceKing2026", points: 160, isUser: false },
+                { rank: 3, name: "BirdieMaster", points: 145, isUser: false },
+                { rank: 4, name: "SpeedDemon99", points: 130, isUser: false },
+                { rank: 5, name: "BallerPro_X", points: 110, isUser: false }
+            ],
+
+            init() {
+                this.startCountdownTimer();
+                this.resetToLanding();
+            },
+
+            // Countdown timer simulation
+            startCountdownTimer() {
+                let hours = 4, mins = 28, secs = 45;
+                setInterval(() => {
+                    secs--;
+                    if(secs < 0) { secs = 59; mins--; }
+                    if(mins < 0) { mins = 59; hours--; }
+                    if(hours < 0) { hours = 23; }
+                    
+                    const format = (n) => String(n).padStart(2, '0');
+                    const hEl = document.getElementById('cdHours');
+                    const mEl = document.getElementById('cdMins');
+                    const sEl = document.getElementById('cdSecs');
+                    if(hEl) hEl.textContent = format(hours);
+                    if(mEl) mEl.textContent = format(mins);
+                    if(sEl) sEl.textContent = format(secs);
+                }, 1000);
+            },
+
+            resetToLanding() {
+                if(this.simInterval) clearInterval(this.simInterval);
+                this.currentSport = null;
+                this.purse = 20;
+                this.picks = Array(8).fill(null);
+                document.getElementById('purseValue').textContent = '20';
+                document.getElementById('headerSportTag').textContent = 'FANTASY ARENA';
+
+                document.getElementById('viewLanding').classList.remove('hidden');
+                document.getElementById('viewSelection').classList.add('hidden');
+                document.getElementById('viewInPlay').classList.add('hidden');
+                document.getElementById('viewLeaderboard').classList.add('hidden');
+
+                document.getElementById('dockSelection').classList.remove('hidden');
+                document.getElementById('dockNav').classList.add('hidden');
+            },
+
+            selectSport(sportKey) {
+                sound.pick();
+                this.currentSport = sportKey;
+                const sport = SPORTS_DATA[sportKey];
+
+                document.getElementById('headerSportTag').textContent = sport.title;
+                document.getElementById('tournamentName').textContent = sport.tournament;
+                
+                const bannerBg = document.getElementById('bannerBg');
+                bannerBg.style.backgroundImage = `url('${sport.bannerBg}')`;
+
+                document.getElementById('viewLanding').classList.add('hidden');
+                document.getElementById('viewSelection').classList.remove('hidden');
+
+                this.renderCategoryContainers();
+                this.updateMiniPicksBar();
+            },
+
+            renderCategoryContainers() {
+                const sport = SPORTS_DATA[this.currentSport];
+                const containerGrid = document.getElementById('categoryContainersGrid');
+                containerGrid.innerHTML = '';
+
+                sport.categories.forEach((cat, catIdx) => {
+                    const box = document.createElement('div');
+                    box.className = "glass-panel p-3.5 rounded-2xl border border-slate-800 space-y-3";
+                    
+                    let slotsHTML = '';
+                    for(let s = 0; s < cat.slotCount; s++) {
+                        const globalSlotIndex = (catIdx * 2) + s;
+                        const pick = this.picks[globalSlotIndex];
+
+                        if(pick) {
+                            slotsHTML += `
+                                <div onclick="app.openModal(${catIdx}, ${globalSlotIndex})" class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-brand-500/50 hover:border-brand-400 transition cursor-pointer group">
+                                    <div class="flex items-center space-x-3">
+                                        <img src="${pick.img}" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=Player'" class="w-10 h-10 rounded-lg object-cover border border-brand-500/30">
+                                        <div>
+                                            <h4 class="font-bold text-xs text-white group-hover:text-brand-400 transition">${pick.name}</h4>
+                                            <span class="text-[10px] text-slate-400">${pick.country} • ${pick.rank}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs font-black text-amber-400 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">${pick.cost} TKN</span>
+                                        <button onclick="event.stopPropagation(); app.removePick(${globalSlotIndex})" class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white flex items-center justify-center transition">
+                                            <i class="fa-solid fa-xmark text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            slotsHTML += `
+                                <button onclick="app.openModal(${catIdx}, ${globalSlotIndex})" class="w-full py-3 px-3 rounded-xl bg-slate-900/60 border border-dashed border-slate-700 hover:border-brand-400/60 hover:bg-slate-900 transition flex items-center justify-between text-slate-400 group">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-brand-500/20 group-hover:text-brand-400 transition">
+                                            <i class="fa-solid fa-plus text-xs"></i>
+                                        </div>
+                                        <span class="text-xs font-semibold group-hover:text-slate-200">Select Pick ${s + 1}</span>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase group-hover:text-brand-400">PICK +</span>
+                                </button>
+                            `;
+                        }
+                    }
+
+                    box.innerHTML = `
+                        <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid ${cat.icon} text-brand-400 text-xs"></i>
+                                <h3 class="font-extrabold text-xs text-slate-200">${cat.name}</h3>
+                            </div>
+                            <span class="text-[9px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">${cat.criteria}</span>
+                        </div>
+                        <div class="space-y-2">
+                            ${slotsHTML}
+                        </div>
+                    `;
+                    containerGrid.appendChild(box);
+                });
+
+                this.updateMiniPicksBar();
+            },
+
+            openModal(catIdx, globalSlotIndex) {
+                sound.pick();
+                this.activeModalCategoryIndex = catIdx;
+                this.activeModalSlotIndex = globalSlotIndex;
+
+                const sport = SPORTS_DATA[this.currentSport];
+                const cat = sport.categories[catIdx];
+
+                document.getElementById('modalCategoryLabel').textContent = `CATEGORY ${catIdx + 1} OF 4`;
+                document.getElementById('modalCategoryTitle').textContent = cat.name;
+                document.getElementById('modalSearchInput').value = '';
+
+                this.renderModalCandidates(sport.candidates);
+                document.getElementById('selectionModal').classList.remove('hidden');
+            },
+
+            closeModal() {
+                document.getElementById('selectionModal').classList.add('hidden');
+            },
+
+            filterModalCandidates() {
+                const query = document.getElementById('modalSearchInput').value.toLowerCase();
+                const candidates = SPORTS_DATA[this.currentSport].candidates.filter(c => 
+                    c.name.toLowerCase().includes(query) || c.country.toLowerCase().includes(query)
+                );
+                this.renderModalCandidates(candidates);
+            },
+
+            renderModalCandidates(candidates) {
+                const list = document.getElementById('modalCandidatesList');
+                list.innerHTML = '';
+
+                // Already picked candidate IDs across all slots
+                const pickedIds = this.picks.filter(p => p !== null).map(p => p.id);
+
+                candidates.forEach(cand => {
+                    const isPicked = pickedIds.includes(cand.id);
+                    const canAfford = this.purse >= cand.cost;
+
+                    const item = document.createElement('div');
+                    item.className = `p-3 rounded-xl border flex items-center justify-between transition ${isPicked ? 'bg-brand-950/20 border-brand-500/30 opacity-75' : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'}`;
+
+                    item.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <img src="${cand.img}" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=Player'" class="w-11 h-11 rounded-xl object-cover border border-slate-700">
+                            <div>
+                                <h4 class="font-bold text-xs text-white">${cand.name}</h4>
+                                <span class="text-[10px] text-slate-400 block">${cand.country} • ${cand.rank}</span>
+                                <span class="text-[10px] font-bold text-amber-400"><i class="fa-solid fa-coins text-[9px]"></i> ${cand.cost} Tokens</span>
+                            </div>
+                        </div>
+                        <div>
+                            ${isPicked ? 
+                                `<span class="text-[10px] font-bold text-brand-400 bg-brand-500/10 px-2.5 py-1.5 rounded-lg border border-brand-500/30">PICKED</span>` :
+                                `<button onclick="app.selectCandidate('${cand.id}')" ${!canAfford ? 'disabled' : ''} class="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase transition ${canAfford ? 'bg-gradient-to-r from-brand-500 to-emerald-400 text-slate-950 hover:shadow-lg hover:shadow-brand-500/30 cursor-pointer' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}">
+                                    ${canAfford ? 'PICK' : 'NO TOKENS'}
+                                </button>`
+                            }
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            },
+
+            selectCandidate(candidateId) {
+                const sport = SPORTS_DATA[this.currentSport];
+                const cand = sport.candidates.find(c => c.id === candidateId);
+
+                if(!cand) return;
+
+                if(this.purse < cand.cost) {
+                    sound.error();
+                    return;
+                }
+
+                // If replacing an existing pick in this slot, refund tokens first
+                if(this.picks[this.activeModalSlotIndex]) {
+                    this.purse += this.picks[this.activeModalSlotIndex].cost;
+                }
+
+                this.picks[this.activeModalSlotIndex] = cand;
+                this.purse -= cand.cost;
+
+                sound.coin();
+                document.getElementById('purseValue').textContent = this.purse;
+
+                this.closeModal();
+                this.renderCategoryContainers();
+            },
+
+            removePick(globalSlotIndex) {
+                sound.pick();
+                const pick = this.picks[globalSlotIndex];
+                if(pick) {
+                    this.purse += pick.cost;
+                    this.picks[globalSlotIndex] = null;
+                    document.getElementById('purseValue').textContent = this.purse;
+                    this.renderCategoryContainers();
+                }
+            },
+
+            updateMiniPicksBar() {
+                const bar = document.getElementById('miniPicksBar');
+                bar.innerHTML = '';
+
+                let filledCount = 0;
+
+                for(let i = 0; i < 8; i++) {
+                    const pick = this.picks[i];
+                    const slot = document.createElement('div');
+
+                    if(pick) {
+                        filledCount++;
+                        slot.className = "w-8 h-8 rounded-lg border border-brand-400/80 overflow-hidden relative shrink-0 shadow-md";
+                        slot.innerHTML = `
+                            <img src="${pick.img}" class="w-full h-full object-cover">
+                            <span class="absolute bottom-0 right-0 bg-brand-500 text-slate-950 font-black text-[7px] px-0.5">${i + 1}</span>
+                        `;
+                    } else {
+                        slot.className = "w-8 h-8 rounded-lg border border-dashed border-slate-700 bg-slate-900/60 flex items-center justify-center shrink-0 text-slate-600 text-[10px] font-mono";
+                        slot.textContent = i + 1;
+                    }
+                    bar.appendChild(slot);
+                }
+
+                document.getElementById('pickProgressText').textContent = `${filledCount}/8`;
+
+                const btnDone = document.getElementById('btnDonePicks');
+                if(filledCount === 8) {
+                    btnDone.disabled = false;
+                    btnDone.className = "px-5 py-3 rounded-xl font-black text-xs uppercase tracking-wider bg-gradient-to-r from-brand-500 via-emerald-400 to-cyan-400 text-slate-950 shadow-lg shadow-brand-500/30 animate-pulse hover:scale-105 cursor-pointer transition duration-200 flex items-center space-x-2 shrink-0";
+                } else {
+                    btnDone.disabled = true;
+                    btnDone.className = "px-5 py-3 rounded-xl font-black text-xs uppercase tracking-wider bg-slate-800 text-slate-500 cursor-not-allowed transition duration-200 flex items-center space-x-2 shrink-0";
+                }
+            },
+
+            submitPicks() {
+                sound.done();
+
+                // Build live data model for each of the 8 picks
+                const sport = SPORTS_DATA[this.currentSport];
+                this.livePicksData = this.picks.map((pick, idx) => {
+                    const catIndex = Math.floor(idx / 2);
+                    return {
+                        ...pick,
+                        catName: sport.categories[catIndex].name,
+                        criteria: sport.categories[catIndex].criteria,
+                        points: 0,
+                        eventsCount: 0
+                    };
+                });
+
+                // Transition UI to In-Play
+                document.getElementById('viewSelection').classList.add('hidden');
+                document.getElementById('viewInPlay').classList.remove('hidden');
+
+                document.getElementById('dockSelection').classList.add('hidden');
+                document.getElementById('dockNav').classList.remove('hidden');
+
+                this.renderInPlayCards();
+                this.startInPlaySimulation();
+            },
+
+            renderInPlayCards() {
+                const container = document.getElementById('inPlayPicksList');
+                container.innerHTML = '';
+
+                this.livePicksData.forEach((item, idx) => {
+                    const card = document.createElement('div');
+                    card.id = `liveCard_${idx}`;
+                    card.className = "glass-panel p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between transition-all duration-300 relative overflow-hidden";
+
+                    card.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="relative">
+                                <img src="${item.img}" onerror="this.src='https://placehold.co/100x100/1e293b/ffffff?text=Player'" class="w-12 h-12 rounded-xl object-cover border border-slate-700">
+                                <span class="absolute -top-1 -left-1 w-4 h-4 bg-slate-800 text-slate-300 rounded-full text-[9px] font-bold flex items-center justify-center border border-slate-700">${idx + 1}</span>
+                            </div>
+                            <div>
+                                <h4 class="font-extrabold text-xs text-white">${item.name}</h4>
+                                <span class="text-[10px] text-brand-400 block font-semibold">${item.catName}</span>
+                                <span class="text-[9px] text-slate-400">${item.criteria}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="cardPts_${idx}" class="text-lg font-black text-amber-400 block">${item.points}</span>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase">PTS</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            },
+
+            startInPlaySimulation() {
+                if(this.simInterval) clearInterval(this.simInterval);
+                this.simTickCount = 0;
+
+                const sportLogs = {
+                    tennis: [
+                        "Ace served by {name}! Unreturnable speed!",
+                        "{name} wins game to love with flawless rallies!",
+                        "{name} converts crucial break point!",
+                        "Match victory secured by {name}!"
+                    ],
+                    golf: [
+                        "Incredible 1-putt sink on 18th by {name}!",
+                        "Birdie scored by {name} on Par 4!",
+                        "Eagle scored! Stunning approach shot by {name}!",
+                        "{name} moves up to top 5 leaderboard!"
+                    ],
+                    f1: [
+                        "{name} completes clean overtake into Turn 1!",
+                        "{name} achieves race finish milestone!",
+                        "{name} gains +3 positions on grid!",
+                        "{name} crosses line for podium finish!"
+                    ]
+                };
+
+                const currentLogs = sportLogs[this.currentSport] || sportLogs.tennis;
+
+                this.runSimLoop(currentLogs);
+            },
+
+            setSimSpeed(speed) {
+                this.simSpeed = speed;
+                [1, 2, 5].forEach(s => {
+                    const btn = document.getElementById(`btnSpeed${s}`);
+                    if(btn) {
+                        btn.className = s === speed ? 
+                            "px-2.5 py-1 rounded-lg font-bold bg-brand-500 text-slate-950 text-[11px]" : 
+                            "px-2.5 py-1 rounded-lg font-bold bg-slate-800 text-slate-300 hover:text-white text-[11px]";
+                    }
+                });
+
+                if(this.simInterval) {
+                    clearInterval(this.simInterval);
+                    const currentLogs = {
+                        tennis: ["Ace served by {name}!", "Match point by {name}!"],
+                        golf: ["Birdie for {name}!", "Eagle for {name}!"],
+                        f1: ["Overtake by {name}!", "Fastest lap by {name}!"]
+                    }[this.currentSport] || ["Event for {name}!"];
+                    this.runSimLoop(currentLogs);
+                }
+            },
+
+            runSimLoop(logTemplates) {
+                const intervalTime = Math.max(200, 1500 / this.simSpeed);
+
+                this.simInterval = setInterval(() => {
+                    this.simTickCount++;
+
+                    // Pick random player from user's 8 picks to gain points
+                    const randomIndex = Math.floor(Math.random() * this.livePicksData.length);
+                    const pick = this.livePicksData[randomIndex];
+
+                    const pointGain = Math.floor(Math.random() * 3 + 1) * 10;
+                    pick.points += pointGain;
+                    pick.eventsCount++;
+
+                    // Sound FX on scoring
+                    sound.coin();
+
+                    // Update UI card point
+                    const ptsEl = document.getElementById(`cardPts_${randomIndex}`);
+                    if(ptsEl) {
+                        ptsEl.textContent = pick.points;
+                        ptsEl.classList.add('text-brand-400');
+                        setTimeout(() => ptsEl.classList.remove('text-brand-400'), 500);
+                    }
+
+                    // Total points calculation
+                    const totalPoints = this.livePicksData.reduce((sum, item) => sum + item.points, 0);
+                    document.getElementById('liveTotalPoints').textContent = `${totalPoints} PTS`;
+                    document.getElementById('userLeaderboardPoints').textContent = totalPoints;
+
+                    // Update Live Log ticker
+                    const randomLog = logTemplates[Math.floor(Math.random() * logTemplates.length)].replace('{name}', pick.name);
+                    document.getElementById('liveFeedText').textContent = `${randomLog} (+${pointGain} pts)`;
+                    document.getElementById('simTimeRemaining').textContent = `MIN ${Math.min(90, this.simTickCount * 2)}'`;
+
+                    // Update Leaderboard dynamically
+                    this.updateLeaderboard(totalPoints);
+
+                }, intervalTime);
+            },
+
+            updateLeaderboard(userTotalPoints) {
+                // Update simulated AI scores slightly
+                this.leaderboardData.forEach(row => {
+                    if(!row.isUser) {
+                        row.points += Math.floor(Math.random() * 4);
+                    }
+                });
+
+                // Insert user score
+                let userRow = this.leaderboardData.find(r => r.isUser);
+                if(!userRow) {
+                    userRow = { rank: 0, name: "You (Baller Elite)", points: userTotalPoints, isUser: true };
+                    this.leaderboardData.push(userRow);
+                } else {
+                    userRow.points = userTotalPoints;
+                }
+
+                // Sort descending
+                this.leaderboardData.sort((a, b) => b.points - a.points);
+
+                // Assign ranks
+                this.leaderboardData.forEach((row, idx) => {
+                    row.rank = idx + 1;
+                });
+
+                // Update UI User Rank Badge
+                const userRank = userRow.rank;
+                document.getElementById('userRankBadge').textContent = `#${userRank}`;
+
+                this.renderLeaderboardList();
+            },
+
+            renderLeaderboardList() {
+                const list = document.getElementById('leaderboardList');
+                if(!list) return;
+
+                list.innerHTML = '';
+
+                this.leaderboardData.forEach(row => {
+                    const item = document.createElement('div');
+                    item.className = `p-3.5 rounded-xl border flex items-center justify-between transition ${row.isUser ? 'bg-gradient-to-r from-brand-950/60 to-slate-900 border-brand-500/50 shadow-md glow-green' : 'bg-slate-900/60 border-slate-800'}`;
+
+                    item.innerHTML = `
+                        <div class="flex items-center space-x-3.5">
+                            <span class="w-7 h-7 rounded-lg font-black text-xs flex items-center justify-center ${row.rank === 1 ? 'bg-amber-400 text-slate-950' : row.rank === 2 ? 'bg-slate-300 text-slate-950' : row.rank === 3 ? 'bg-amber-700 text-white' : 'bg-slate-800 text-slate-400'}">
+                                ${row.rank}
+                            </span>
+                            <div>
+                                <h4 class="font-extrabold text-xs text-white ${row.isUser ? 'text-brand-400' : ''}">${row.name}</h4>
+                                <span class="text-[9px] text-slate-400">${row.isUser ? 'Your Custom Draft' : 'Global Challenger'}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-extrabold text-sm ${row.isUser ? 'text-amber-400' : 'text-slate-200'}">${row.points}</span>
+                            <span class="text-[9px] font-bold text-slate-500 block">PTS</span>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            },
+
+            switchTab(tab) {
+                sound.pick();
+                const inPlayView = document.getElementById('viewInPlay');
+                const lbView = document.getElementById('viewLeaderboard');
+
+                const tabInPlay = document.getElementById('tabInPlay');
+                const tabLeaderboard = document.getElementById('tabLeaderboard');
+
+                if(tab === 'inplay') {
+                    inPlayView.classList.remove('hidden');
+                    lbView.classList.add('hidden');
+
+                    tabInPlay.className = "flex-1 py-2 text-center flex flex-col items-center space-y-1 text-brand-400 font-bold";
+                    tabLeaderboard.className = "flex-1 py-2 text-center flex flex-col items-center space-y-1 text-slate-500 font-bold hover:text-slate-300";
+                } else if(tab === 'leaderboard') {
+                    inPlayView.classList.add('hidden');
+                    lbView.classList.remove('hidden');
+
+                    tabInPlay.className = "flex-1 py-2 text-center flex flex-col items-center space-y-1 text-slate-500 font-bold hover:text-slate-300";
+                    tabLeaderboard.className = "flex-1 py-2 text-center flex flex-col items-center space-y-1 text-brand-400 font-bold";
+                }
+            }
+        };
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            app.init();
+        };
+    </script>
+</body>
+</html>
